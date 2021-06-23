@@ -216,31 +216,56 @@ def simulationWithoutDrug(numViruses, maxPop, maxBirthProb, clearProb,
     numTrials: number of simulation runs to execute (an integer)
     """
 
-    mean=[]
-    population=[]
-    for i in range(300):
-        #300 time-steps
-        #Crear una lista que contenga primero todos los time-steps y dentro los diferentes trials
-        #population=[[ts1_trial1, ts1_trial2, ...], [ts2_trial1, ts2_trial2, ...], ...]
-        population.append([])
-    
-    for t in range(numTrials):
-        time=[]
-        viruses=[]
-        #Como los virus se van actualizando, hay que inicializarlos cada vez
-        for v in range(numViruses):
+    steps = 300                                     # in case we need to change this
+
+    results = {}                                    # key = step number, val = list of pop sizes
+    #Diccionario con keys cada time-step y cuyos values son listas con la población en cada trial
+    #Así guardamos para cada time-step los resultados obtenidos en cada trial
+    #results[step]=[poblacion_trial_1, poblacion_trial_2, ...]
+    for step in range(steps):
+        results[step] = []
+
+    for trial in range(numTrials):
+        viruses = []                                # new list of virus instances
+        for i in range(numViruses):
             viruses.append(SimpleVirus(maxBirthProb, clearProb))
-        #Inicializamos en cada trial el paciente
-        p=Patient(viruses, maxPop)
+        pat = Patient(viruses, maxPop)              # new Patient with list of viruses above
+        for step in range(steps):
+            #time=0 después de llamar por primera vez a update
+            results[step].append(pat.update())      # num of viruses in Patient
+
+    meanDict = {}                                   # key = step number, val = mean of vals list
+    for step in range(steps):
+        meanDict[step] = sum(results[step]) / len(results[step])
+    '''
+    '''
+    popVirus = []
+    for i in range(300):
+        popVirus.append([])
+    #popVirus es una lista de listas, primero con cada trial y dentro reuniendo cada time-step
+    #popVirus=[[pop_trial1_ts1, pop_trial1_ts2, ...], [pop_trial2_ps1, pop_trial2_ps2, ...], ...]
+
+    for i in range(numTrials):
+        time = []
+        viruses = [] 
+
+        for num in range(numViruses):
+            viruses.append(SimpleVirus(maxBirthProb,clearProb))
+        simPatient = Patient(viruses,maxPop)
+
         for i in range(300):
             time.append(i)
-            population[i].append(p.update())
+            popVirus[i].append(simPatient.update())
+
+    avgVirus = []
+
+    for trial in popVirus:
+        virusSum = 0
+        for pop in trial:
+            virusSum += pop
+        avgVirus.append(virusSum/numTrials)
     
-    for i in range(300):
-        #Sacamos la media de los trials en cada time-step
-        mean.append(sum(population[i])/numTrials)
-    
-    pylab.plot(mean, label = "SimpleVirus")
+    pylab.plot(avgVirus, label = "SimpleVirus")
     pylab.title("SimpleVirus simulation")
     pylab.xlabel("Time Steps")
     pylab.ylabel("Average Virus Population")
