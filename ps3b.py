@@ -278,20 +278,22 @@ class ResistantVirus(SimpleVirus):
         the probability of the offspring acquiring or losing resistance to a drug.
         """
 
-        # TODO
+        SimpleVirus.__init__(self, maxBirthProb, clearProb)
+        self.resistances=resistances
+        self.mutProb=mutProb
 
 
     def getResistances(self):
         """
         Returns the resistances for this virus.
         """
-        # TODO
+        return self.resistances
 
     def getMutProb(self):
         """
         Returns the mutation probability for this virus.
         """
-        # TODO
+        return self.mutProb
 
     def isResistantTo(self, drug):
         """
@@ -304,8 +306,16 @@ class ResistantVirus(SimpleVirus):
         returns: True if this virus instance is resistant to the drug, False
         otherwise.
         """
-        
-        # TODO
+        if drug in self.getResistances():
+            return self.resistances[drug]
+        else:
+            return False
+        '''
+        try:
+            return self.resistances[drug]
+        except KeyError:
+            return False
+        '''
 
 
     def reproduce(self, popDensity, activeDrugs):
@@ -352,9 +362,49 @@ class ResistantVirus(SimpleVirus):
         maxBirthProb and clearProb values as this virus. Raises a
         NoChildException if this virus particle does not reproduce.
         """
-
-        # TODO
-
+        #Creamos una copia que nos servirá para las características de la herencia
+        resistances=self.getResistances()
+        #Ya que vamos a recorrer el diccionario original entero, podemos crear uno nuevo
+        new={}
+        for d in activeDrugs:
+            if not self.isResistantTo(d):
+                #El virus no deja descendencia si no es resistente a alguno de los medicamentos
+                #Además, se muere
+                raise NoChildException
+        #El virus sobrevive y a lo mejor se reproduce
+        p1=random.random()
+        if p1<(self.maxBirthProb*(1-popDensity)):
+            #Si logra reproducirse falta por ver si hereda las características o no
+            #Mayor porcentaje de quedarse como está y menor de cambiar(que podrá ser para bien, ganar resistencia, o para mal, perderla)
+            #Ver ejemplo más arriba para más información
+            for d in resistances.keys():
+                p2=random.random()
+                if resistances[d]==True and p2<(1-self.getMutProb()):
+                    new[d]=True
+                elif resistances[d]==True and p2>=(1-self.getMutProb()):
+                    new[d]=False
+                elif resistances[d]==False and p2<(1-self.getMutProb()):
+                    new[d]=False
+                elif resistances[d]==False and p2>=(1-self.getMutProb()):
+                    new[d]=True
+            #Una vez visto los rasgos que hereda o no, se inicializa el hijo con el diccionario que hemos ido modificando
+            return ResistantVirus(self.getMaxBirthProb(), self.getClearProb(), new, self.getMutProb())
+        else:
+            raise NoChildException
+        '''
+        for drug in activeDrugs:
+            if not self.isResistantTo(drug):
+                raise NoChildException
+        if random.random() <= self.maxBirthProb * (1 - popDensity):
+            newRes = {}
+            for k in self.resistances.keys():
+                if random.random() <= self.mutProb:
+                    newRes[k] = not self.resistances[k]
+                else:
+                    newRes[k] = self.resistances[k]
+            return ResistantVirus(self.maxBirthProb, self.clearProb, newRes, self.mutProb)
+        raise NoChildException
+        '''
             
 
 class TreatedPatient(Patient):
@@ -375,7 +425,8 @@ class TreatedPatient(Patient):
         maxPop: The  maximum virus population for this patient (an integer)
         """
 
-        # TODO
+        Patient.__init__(self, viruses, maxPop)
+        self.prescription=[]
 
 
     def addPrescription(self, newDrug):
@@ -388,8 +439,11 @@ class TreatedPatient(Patient):
 
         postcondition: The list of drugs being administered to a patient is updated
         """
-
-        # TODO
+        #What happens when a drug is introduced? The drugs we consider do not directly kill virus particles lacking resistance to the drug,
+        #but prevent those virus particles from reproducing (much like actual drugs used to treat HIV).
+        #Virus particles with resistance to the drug continue to reproduce normally.
+        if newDrug not in self.getPrescriptions():
+            self.getPrescriptions().append(newDrug)
 
 
     def getPrescriptions(self):
@@ -400,7 +454,7 @@ class TreatedPatient(Patient):
         patient.
         """
 
-        # TODO
+        return self.prescription
 
 
     def getResistPop(self, drugResist):
@@ -414,8 +468,17 @@ class TreatedPatient(Patient):
         returns: The population of viruses (an integer) with resistances to all
         drugs in the drugResist list.
         """
-
-        # TODO
+        count=0
+        for v in self.getViruses():
+            #Comprobamos todos los virus
+            i=0
+            for d in drugResist:
+                #Ese virus tiene que ser resistente a todos los fármacos
+                if v.isResistantTo(d):
+                    i+=1
+                    if i==len(drugResist):
+                        count+=1
+        return count
 
 
     def update(self):
@@ -438,9 +501,24 @@ class TreatedPatient(Patient):
         returns: The total virus population at the end of the update (an
         integer)
         """
-
-        # TODO
-
+        #Es idéntico al de más arriba, con algunos cambios en los inputs
+        #No hace falta actualizar Patient todo el rato
+        viruses=self.getViruses()
+        copy=viruses.copy()
+        for v in copy:
+            if v.doesClear():
+                viruses.remove(v)
+        popDensity=self.getTotalPop()/self.getMaxPop()
+        viruses=self.getViruses()
+        copy=viruses.copy()
+        for v in copy:
+            try:
+                #Hay que añadir la lista de medicamentos
+                a=v.reproduce(popDensity, self.getPrescriptions())
+                viruses.append(a)
+            except NoChildException:
+                continue
+        return self.getTotalPop()
 
 
 #
