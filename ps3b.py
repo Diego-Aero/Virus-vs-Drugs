@@ -216,7 +216,39 @@ def simulationWithoutDrug(numViruses, maxPop, maxBirthProb, clearProb,
     numTrials: number of simulation runs to execute (an integer)
     """
 
-    # TODO
+    mean=[]
+    population=[]
+    for i in range(300):
+        #300 time-steps
+        #Crear una lista que contenga primero todos los time-steps y dentro los diferentes trials
+        #population=[[ts1_trial1, ts1_trial2, ...], [ts2_trial1, ts2_trial2, ...], ...]
+        population.append([])
+    
+    for t in range(numTrials):
+        time=[]
+        viruses=[]
+        #Como los virus se van actualizando, hay que inicializarlos cada vez
+        for v in range(numViruses):
+            viruses.append(SimpleVirus(maxBirthProb, clearProb))
+        #Inicializamos en cada trial el paciente
+        p=Patient(viruses, maxPop)
+        for i in range(300):
+            time.append(i)
+            population[i].append(p.update())
+    
+    for i in range(300):
+        #Sacamos la media de los trials en cada time-step
+        mean.append(sum(population[i])/numTrials)
+    
+    pylab.plot(mean, label = "SimpleVirus")
+    pylab.title("SimpleVirus simulation")
+    pylab.xlabel("Time Steps")
+    pylab.ylabel("Average Virus Population")
+    pylab.legend(loc = "best")
+    pylab.show()
+
+
+simulationWithoutDrug(100, 1000, 0.1, 0.05, 100)
 
 
 
