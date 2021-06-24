@@ -546,5 +546,40 @@ def simulationWithDrug(numViruses, maxPop, maxBirthProb, clearProb, resistances,
     numTrials: number of simulation runs to execute (an integer)
     
     """
+    #Queremos 150 time-steps sin administrar medicamentos, añadir guttagonol y después otros 150 
+    #Dibujamos la población y los resistentes
+    mean=[]
+    mean_resis=[]
+    population=[]
+    population_resis=[]
+    time=[]
+    for i in range(300):
+        population.append([])
+        population_resis.append([])
+        time.append(i)
+    
+    for t in range(numTrials):
+        viruses=[]
+        for v in range(numViruses):
+            viruses.append(ResistantVirus(maxBirthProb, clearProb, resistances, mutProb))
+        p=TreatedPatient(viruses, maxPop)
+        for i in range(300):
+            if i==150:
+                #Añadimos el medicamento en el time-sep 150
+                p.addPrescription('guttagonol')
+            population[i].append(p.update())
+            population_resis[i].append(p.getResistPop(['guttagonol']))
+    
+    for i in range(300):
+        mean.append(sum(population[i])/numTrials)
+        mean_resis.append((sum(population_resis[i])/numTrials))
+    
+    pylab.plot(mean, label = "Virus")
+    pylab.plot(mean_resis, label = "Virus resistant to drugs")
+    pylab.title("ResistantVirus simulation")
+    pylab.xlabel("Time Steps")
+    pylab.ylabel("Average Virus Population")
+    pylab.legend(loc = "best")
+    pylab.show()
 
-    # TODO
+simulationWithDrug(100, 10000, 0.1, 0.05, {'guttagonol':False}, 0.005, 100)
